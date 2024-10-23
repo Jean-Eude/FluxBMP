@@ -43,25 +43,7 @@ struct BMPColorHeader {
 
 
 class Bitmap {
-    public: 
-        // Pour image en NDG
-        Bitmap(uint32_t width, uint32_t height) {
-            if (width <= 0 || height <= 0) {
-                throw std::runtime_error("La hauteur et la longueur de l'image doivent être positifs.");
-            }
-
-            this->bmp_info_header.width = width;
-            this->bmp_info_header.height = height;
-
-            this->bmp_info_header.size = sizeof(BMPInfoHeader) + sizeof(BMPColorHeader);
-            this->file_header.offset_data = sizeof(BMPFileHeader) + sizeof(BMPInfoHeader) + sizeof(BMPColorHeader);
-
-            this->bmp_info_header.bit_count = 8;
-            this->bmp_info_header.compression = 3;
-            this->row_stride = width * 1;
-            this->data.resize(row_stride * height);
-            this->file_header.file_size = this->file_header.offset_data +this->data.size();
-        }
+    public:
 
         Bitmap(int32_t width, int32_t height, bool has_alpha = true) {
             if (width <= 0 || height <= 0) {
@@ -135,22 +117,22 @@ class Bitmap {
 
         // Méthode pour dessiner un pixel
         void set_pixel(double r, double g, double b, double a, int x, int y) {
-            if (x >= (uint32_t)bmp_info_header.width || y >= (uint32_t)bmp_info_header.height || x < 0 || y < 0) {
-                throw std::runtime_error("Le point est en dehors des limites de l'image !");
+            if (x >= bmp_info_header.width || y >= bmp_info_header.height || x < 0 || y < 0) {
+                throw std::runtime_error("The point is outside the image boundaries!");
             }
 
-            uint32_t channels =this->bmp_info_header.bit_count / 8;
+            uint32_t channels = bmp_info_header.bit_count / 8;
 
-            uint8_t ir = static_cast<uint8_t>(256. * r);
-            uint8_t ig = static_cast<uint8_t>(256. * g);
-            uint8_t ib = static_cast<uint8_t>(256. * b);
-            uint8_t ia = static_cast<uint8_t>(256. * a);
+            uint8_t ir = static_cast<uint8_t>(r * 255);
+            uint8_t ig = static_cast<uint8_t>(g * 255);
+            uint8_t ib = static_cast<uint8_t>(b * 255);
+            uint8_t ia = static_cast<uint8_t>(a * 255);
 
-            this->data[channels * (y *this->bmp_info_header.width + x) + 0] = ib;
-            this->data[channels * (y *this->bmp_info_header.width + x) + 1] = ig;
-            this->data[channels * (y *this->bmp_info_header.width + x) + 2] = ir;
+            data[channels * (y * bmp_info_header.width + x) + 0] = ib;
+            data[channels * (y * bmp_info_header.width + x) + 1] = ig;
+            data[channels * (y * bmp_info_header.width + x) + 2] = ir;
             if (channels == 4) {
-            this->data[channels * (y *this->bmp_info_header.width + x) + 3] = ia;
+                data[channels * (y * bmp_info_header.width + x) + 3] = ia;
             }
         }
 

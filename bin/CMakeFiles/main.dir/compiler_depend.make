@@ -192,6 +192,9 @@ CMakeFiles/main.dir/home/evan/Bureau/Flux/FluxBMP/src/main.cpp.o: /home/evan/Bur
   /usr/include/c++/11/bits/stl_bvector.h \
   /usr/include/c++/11/bits/vector.tcc \
   /usr/include/c++/11/iostream \
+  /home/evan/Bureau/Flux/FluxBMP/include/Maths/Maths.hpp \
+  /home/evan/Bureau/Flux/FluxBMP/include/Maths/FastMaths.hpp \
+  /home/evan/Bureau/Flux/FluxBMP/include/Maths/Shaping.hpp \
   /usr/include/c++/11/cmath \
   /usr/include/math.h \
   /usr/include/x86_64-linux-gnu/bits/math-vector.h \
@@ -216,16 +219,36 @@ CMakeFiles/main.dir/home/evan/Bureau/Flux/FluxBMP/src/main.cpp.o: /home/evan/Bur
   /usr/include/c++/11/tr1/modified_bessel_func.tcc \
   /usr/include/c++/11/tr1/poly_hermite.tcc \
   /usr/include/c++/11/tr1/poly_laguerre.tcc \
-  /usr/include/c++/11/tr1/riemann_zeta.tcc
+  /usr/include/c++/11/tr1/riemann_zeta.tcc \
+  /home/evan/Bureau/Flux/FluxBMP/include/Maths/Frequency1D.hpp \
+  /usr/include/c++/11/complex \
+  /usr/include/c++/11/sstream \
+  /usr/include/c++/11/bits/sstream.tcc \
+  /usr/include/c++/11/array \
+  /usr/include/c++/11/utility \
+  /usr/include/c++/11/bits/stl_relops.h \
+  /usr/include/c++/11/bitset \
+  /home/evan/Bureau/Flux/FluxBMP/include/Maths/Frequency2D.hpp \
+  /home/evan/Bureau/Flux/FluxBMP/include/Maths/Others.hpp
 
+
+/home/evan/Bureau/Flux/FluxBMP/include/Maths/Others.hpp:
+
+/home/evan/Bureau/Flux/FluxBMP/include/Maths/Frequency2D.hpp:
+
+/usr/include/c++/11/bits/stl_relops.h:
+
+/usr/include/c++/11/array:
+
+/usr/include/c++/11/sstream:
+
+/home/evan/Bureau/Flux/FluxBMP/include/Maths/Frequency1D.hpp:
 
 /usr/include/c++/11/tr1/riemann_zeta.tcc:
 
 /usr/include/c++/11/tr1/legendre_function.tcc:
 
 /usr/include/c++/11/tr1/beta_function.tcc:
-
-/usr/include/c++/11/bits/specfun.h:
 
 /usr/include/x86_64-linux-gnu/bits/iscanonical.h:
 
@@ -241,9 +264,17 @@ CMakeFiles/main.dir/home/evan/Bureau/Flux/FluxBMP/src/main.cpp.o: /home/evan/Bur
 
 /usr/include/math.h:
 
+/usr/include/c++/11/bits/specfun.h:
+
+/home/evan/Bureau/Flux/FluxBMP/include/Maths/Shaping.hpp:
+
+/home/evan/Bureau/Flux/FluxBMP/include/Maths/FastMaths.hpp:
+
 /usr/include/c++/11/bits/vector.tcc:
 
 /usr/include/c++/11/bits/stl_bvector.h:
+
+/home/evan/Bureau/Flux/FluxBMP/include/Maths/Maths.hpp:
 
 /usr/include/c++/11/bits/stl_uninitialized.h:
 
@@ -306,6 +337,8 @@ CMakeFiles/main.dir/home/evan/Bureau/Flux/FluxBMP/src/main.cpp.o: /home/evan/Bur
 /usr/include/wctype.h:
 
 /usr/include/x86_64-linux-gnu/bits/errno.h:
+
+/usr/include/c++/11/utility:
 
 /usr/include/errno.h:
 
@@ -447,6 +480,8 @@ CMakeFiles/main.dir/home/evan/Bureau/Flux/FluxBMP/src/main.cpp.o: /home/evan/Bur
 
 /usr/include/x86_64-linux-gnu/c++/11/bits/c++config.h:
 
+/usr/include/c++/11/complex:
+
 /usr/include/c++/11/bits/ostream_insert.h:
 
 /usr/include/x86_64-linux-gnu/sys/cdefs.h:
@@ -488,6 +523,8 @@ CMakeFiles/main.dir/home/evan/Bureau/Flux/FluxBMP/src/main.cpp.o: /home/evan/Bur
 /usr/include/c++/11/bits/stringfwd.h:
 
 /usr/include/features-time64.h:
+
+/usr/include/c++/11/bitset:
 
 /usr/include/linux/errno.h:
 
@@ -612,6 +649,8 @@ CMakeFiles/main.dir/home/evan/Bureau/Flux/FluxBMP/src/main.cpp.o: /home/evan/Bur
 /usr/include/x86_64-linux-gnu/bits/thread-shared-types.h:
 
 /usr/include/x86_64-linux-gnu/bits/struct_mutex.h:
+
+/usr/include/c++/11/bits/sstream.tcc:
 
 /usr/lib/gcc/x86_64-linux-gnu/11/include/stddef.h:
 
