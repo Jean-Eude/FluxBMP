@@ -6,5 +6,5 @@ CXX_DEFINES =
 
 CXX_INCLUDES = -I/home/evan/Bureau/Flux/FluxBMP/bin/../include -I/home/evan/Bureau/Flux/FluxBMP/bin/../include/Maths
 
-CXX_FLAGS = -std=c++17
+CXX_FLAGS = -Wall -Ofast -std=c++17
 

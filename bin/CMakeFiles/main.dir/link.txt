@@ -1,1 +1,1 @@
-/usr/bin/c++ CMakeFiles/main.dir/home/evan/Bureau/Flux/FluxBMP/src/main.cpp.o -o main   -L/home/evan/Bureau/Flux/FluxBMP/bin/../lib  -Wl,-rpath,/home/evan/Bureau/Flux/FluxBMP/bin/../lib -Wall -Ofast 
+/usr/bin/c++ CMakeFiles/main.dir/home/evan/Bureau/Flux/FluxBMP/src/main.cpp.o -o main   -L/home/evan/Bureau/Flux/FluxBMP/bin/../lib 

@@ -1,0 +1,157 @@
+#include <iostream>
+#include <vector>
+#include <png.h>
+
+void read_png_file(const char* file_name, std::vector<uint16_t>& image, unsigned& width, unsigned& height) {
+    FILE *fp = fopen(file_name, "rb");
+    if (!fp) {
+        std::cerr << "Error: Cannot open file " << file_name << std::endl;
+        return;
+    }
+
+    png_structp png = png_create_read_struct(PNG_LIBPNG_VER_STRING, nullptr, nullptr, nullptr);
+    if (!png) {
+        std::cerr << "Error: Cannot create png read struct" << std::endl;
+        fclose(fp);
+        return;
+    }
+
+    png_infop info = png_create_info_struct(png);
+    if (!info) {
+        std::cerr << "Error: Cannot create png info struct" << std::endl;
+        png_destroy_read_struct(&png, nullptr, nullptr);
+        fclose(fp);
+        return;
+    }
+
+    if (setjmp(png_jmpbuf(png))) {
+        std::cerr << "Error: png jump buffer error" << std::endl;
+        png_destroy_read_struct(&png, &info, nullptr);
+        fclose(fp);
+        return;
+    }
+
+    png_init_io(png, fp);
+    png_read_info(png, info);
+
+    width = png_get_image_width(png, info);
+    height = png_get_image_height(png, info);
+    png_byte color_type = png_get_color_type(png, info);
+    png_byte bit_depth = png_get_bit_depth(png, info);
+
+    // Suppression de png_set_strip_16(png), on veut garder 16 bits
+    if (bit_depth == 16)
+        png_set_strip_16(png);
+
+    // Déterminer le type de couleur et appliquer le filtre nécessaire
+    if (color_type == PNG_COLOR_TYPE_RGB || color_type == PNG_COLOR_TYPE_GRAY || color_type == PNG_COLOR_TYPE_PALETTE)
+        png_set_filler(png, 0xFF, PNG_FILLER_AFTER);
+
+    if (color_type == PNG_COLOR_TYPE_GRAY || color_type == PNG_COLOR_TYPE_GRAY_ALPHA)
+        png_set_gray_to_rgb(png);
+
+    png_read_update_info(png, info);
+
+    image.resize(width * height);
+    std::vector<png_bytep> row_pointers(height);
+
+    // Méthode 1 : Utilisation de reinterpret_cast pour accéder directement à l'image
+    for (unsigned i = 0; i < height; ++i)
+        row_pointers[i] = reinterpret_cast<png_bytep>(&image[i]);
+
+    png_read_image(png, row_pointers.data());
+
+    png_destroy_read_struct(&png, &info, nullptr);
+    fclose(fp);
+}
+
+void write_png_file(const char* file_name, const std::vector<uint16_t>& image, unsigned width, unsigned height) {
+    FILE *fp = fopen(file_name, "wb");
+    if (!fp) {
+        std::cerr << "Error: Cannot open file " << file_name << std::endl;
+        return;
+    }
+
+    png_structp png = png_create_write_struct(PNG_LIBPNG_VER_STRING, nullptr, nullptr, nullptr);
+    if (!png) {
+        std::cerr << "Error: Cannot create png write struct" << std::endl;
+        fclose(fp);
+        return;
+    }
+
+    png_infop info = png_create_info_struct(png);
+    if (!info) {
+        std::cerr << "Error: Cannot create png info struct" << std::endl;
+        png_destroy_write_struct(&png, nullptr);
+        fclose(fp);
+        return;
+    }
+
+    if (setjmp(png_jmpbuf(png))) {
+        std::cerr << "Error: PNG jump buffer error" << std::endl;
+        png_destroy_write_struct(&png, &info);
+        fclose(fp);
+        return;
+    }
+
+    // Configurer l'image PNG : format 16 bits par pixel en niveaux de gris
+    png_set_IHDR(png, info, width, height, 16, PNG_COLOR_TYPE_GRAY, PNG_INTERLACE_NONE, PNG_COMPRESSION_TYPE, PNG_FILTER_TYPE);
+    png_init_io(png, fp);
+
+    // Méthode 1 : Utilisation de reinterpret_cast pour l'écriture
+    std::vector<png_bytep> row_pointers(height);
+
+    for (unsigned y = 0; y < height; ++y) {
+        row_pointers[y] = reinterpret_cast<png_bytep>(&image[y * width]);
+    }
+
+    png_write_png(png, info, PNG_TRANSFORM_IDENTITY, nullptr);
+
+    png_destroy_write_struct(&png, &info);
+    fclose(fp);
+}
+
+int main() {
+    const char* file_name = "example.png";  // Nom du fichier à lire
+    std::vector<uint16_t> image;
+    unsigned width, height;
+
+    // Lire l'image PNG
+    read_png_file(file_name, image, width, height);
+
+    std::cout << "Image width: " << width << ", height: " << height << std::endl;
+
+    // Appliquer un seuillage simple (exemple : Seuillage de 128)
+    for (unsigned i = 0; i < width * height; ++i) {
+        uint16_t pixel_value = image[i];
+        // Seuillage simple : Si la valeur > 128, mettre à 65535 (blanc), sinon 0 (noir)
+        pixel_value = (pixel_value > 128) ? 65535 : 0;
+        // Sauvegarder les valeurs modifiées
+        image[i] = pixel_value;
+    }
+
+    // Sauvegarder l'image après avoir appliqué le seuillage
+    write_png_file("output_seuillage.png", image, width, height);
+
+    return 0;
+}
+
+// Alternative avec accès via row[x * 2] pour assembler un uint16_t
+for (unsigned y = 0; y < height; ++y) {
+png_bytep row = row_pointers[y];
+for (unsigned x = 0; x < width; ++x) {
+    // Lire deux octets consécutifs pour former un uint16_t
+    uint16_t value = (row[x * 2] << 8) | row[x * 2 + 1];
+    image[y * width + x] = value;
+}
+}
+
+// Alternative avec accès via row[x * 2] pour écrire un uint16_t
+for (unsigned y = 0; y < height; ++y) {
+png_bytep row = row_pointers[y];
+for (unsigned x = 0; x < width; ++x) {
+    // Convertir chaque uint16_t en deux octets pour écrire dans l'image
+    row[x * 2] = (image[y * width + x] >> 8) & 0xFF;     // Octet de poids fort
+    row[x * 2 + 1] = image[y * width + x] & 0xFF;          // Octet de poids faible
+}
+}

@@ -12,4 +12,5 @@ link_directories(../lib)
 file(GLOB SOURCES ../src/*.cpp)
 
 add_executable(main ${SOURCES})
-target_link_libraries(main -Wall -Ofast)
+target_compile_options(main PRIVATE -Wall -Ofast)
+target_link_libraries(main PRIVATE)
