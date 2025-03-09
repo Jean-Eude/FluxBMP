@@ -1,0 +1,621 @@
+#pragma once
+#include <fstream>
+#include <vector>
+#include <stdexcept>
+#include <iostream>
+#include <cstdint>
+#include <cstring>
+
+#pragma pack(push, 1)
+
+struct ImageHeader {
+    char title[80];   // Titre de l'image
+    int width;        // Largeur de l'image
+    int height;       // Hauteur de l'image
+};
+
+struct PixelData {
+    union {
+        int int_val;
+        float float_val;
+        double double_val;
+        unsigned short ushort_val;
+        unsigned char uchar_val;
+    };
+    char type;  // 'i' for int, 'f' for float, 'd' for double, 's' for unsigned short, 'c' for unsigned char
+};
+
+#pragma pack(pop)
+
+class CustomImage {
+public:
+    CustomImage(const char* fname) {
+        this->fname = fname;
+        read(fname);
+    }
+
+    CustomImage(int width, int height, const char* title = "Untitled") {
+        header.width = width;
+        header.height = height;
+        std::strncpy(header.title, title, 80);
+    }
+
+    void read(const char* fname) {
+        std::ifstream infile{fname, std::ios::binary};
+        if (!infile) {
+            throw std::runtime_error("Unable to open file for reading");
+        }
+
+        // Lire l'entête de l'image
+        infile.read(reinterpret_cast<char*>(&header), sizeof(header));
+
+        // Allouer de l'espace pour les données des pixels
+        data.resize(header.width * header.height);
+
+        // Lire les données des pixels
+        for (int i = 0; i < header.width * header.height; ++i) {
+            char type;
+            infile.read(&type, sizeof(char));
+            data[i].type = type;
+            switch (type) {
+                case 'i':  // Int
+                    infile.read(reinterpret_cast<char*>(&data[i].int_val), sizeof(int));
+                    break;
+                case 'f':  // Float
+                    infile.read(reinterpret_cast<char*>(&data[i].float_val), sizeof(float));
+                    break;
+                case 'd':  // Double
+                    infile.read(reinterpret_cast<char*>(&data[i].double_val), sizeof(double));
+                    break;
+                case 's':  // Unsigned short
+                    infile.read(reinterpret_cast<char*>(&data[i].ushort_val), sizeof(unsigned short));
+                    break;
+                case 'c':  // Unsigned char
+                    infile.read(reinterpret_cast<char*>(&data[i].uchar_val), sizeof(unsigned char));
+                    break;
+                default:
+                    throw std::runtime_error("Unknown pixel data type");
+            }
+        }
+    }
+
+    void write(const char* fname) {
+        std::ofstream outfile{fname, std::ios::binary};
+        if (!outfile) {
+            throw std::runtime_error("Unable to open file for writing");
+        }
+
+        // Écrire l'entête de l'image
+        outfile.write(reinterpret_cast<const char*>(&header), sizeof(header));
+
+        // Écrire les données des pixels
+        for (int i = 0; i < header.width * header.height; ++i) {
+            outfile.write(&data[i].type, sizeof(char));
+            switch (data[i].type) {
+                case 'i':  // Int
+                    outfile.write(reinterpret_cast<const char*>(&data[i].int_val), sizeof(int));
+                    break;
+                case 'f':  // Float
+                    outfile.write(reinterpret_cast<const char*>(&data[i].float_val), sizeof(float));
+                    break;
+                case 'd':  // Double
+                    outfile.write(reinterpret_cast<const char*>(&data[i].double_val), sizeof(double));
+                    break;
+                case 's':  // Unsigned short
+                    outfile.write(reinterpret_cast<const char*>(&data[i].ushort_val), sizeof(unsigned short));
+                    break;
+                case 'c':  // Unsigned char
+                    outfile.write(reinterpret_cast<const char*>(&data[i].uchar_val), sizeof(unsigned char));
+                    break;
+                default:
+                    throw std::runtime_error("Unknown pixel data type");
+            }
+        }
+    }
+
+    // Template pour set_pixel
+    template <typename T>
+    void set_pixel(int x, int y, T value) {
+        if (x < 0 || x >= header.width || y < 0 || y >= header.height) {
+            throw std::out_of_range("Pixel coordinates are out of bounds");
+        }
+        int index = y * header.width + x;
+
+        // Définir le type et la valeur en fonction du type de T
+        if constexpr (std::is_same_v<T, int>) {
+            data[index].type = 'i';
+            data[index].int_val = value;
+        } else if constexpr (std::is_same_v<T, float>) {
+            data[index].type = 'f';
+            data[index].float_val = value;
+        } else if constexpr (std::is_same_v<T, double>) {
+            data[index].type = 'd';
+            data[index].double_val = value;
+        } else if constexpr (std::is_same_v<T, unsigned short>) {
+            data[index].type = 's';
+            data[index].ushort_val = value;
+        } else if constexpr (std::is_same_v<T, unsigned char>) {
+            data[index].type = 'c';
+            data[index].uchar_val = value;
+        } else {
+            throw std::runtime_error("Unsupported pixel type");
+        }
+    }
+
+    void print_pixel(int x, int y) {
+        if (x < 0 || x >= header.width || y < 0 || y >= header.height) {
+            throw std::out_of_range("Pixel coordinates are out of bounds");
+        }
+        int index = y * header.width + x;
+        switch (data[index].type) {
+            case 'i':
+                std::cout << "Pixel at (" << x << ", " << y << ") - Type: int, Value: " << data[index].int_val << "\n";
+                break;
+            case 'f':
+                std::cout << "Pixel at (" << x << ", " << y << ") - Type: float, Value: " << data[index].float_val << "\n";
+                break;
+            case 'd':
+                std::cout << "Pixel at (" << x << ", " << y << ") - Type: double, Value: " << data[index].double_val << "\n";
+                break;
+            case 's':
+                std::cout << "Pixel at (" << x << ", " << y << ") - Type: unsigned short, Value: " << data[index].ushort_val << "\n";
+                break;
+            case 'c':
+                std::cout << "Pixel at (" << x << ", " << y << ") - Type: unsigned char, Value: " << (int)data[index].uchar_val << "\n";
+                break;
+            default:
+                std::cout << "Unknown pixel data type\n";
+        }
+    }
+
+private:
+    ImageHeader header;
+    std::vector<PixelData> data;
+    const char* fname;
+};
+
+
+
+
+
+
+
+
+
+
+
+#include <iostream>
+#include <cstring>
+#include <arpa/inet.h>  // Pour htonl, ntohl, htons et ntohs
+
+// Fonction générique pour convertir en Big Endian en fonction du type T
+template <typename T>
+T to_big_endian(T val) {
+    // Par défaut, pour les types comme int, short, on utilise htonl et htons
+    static_assert(sizeof(T) == 4 || sizeof(T) == 2, "Unsupported type size");
+
+    if constexpr (std::is_integral<T>::value && sizeof(T) == 4) {
+        // Si c'est un int (4 bytes)
+        return htonl(val);
+    }
+    else if constexpr (std::is_integral<T>::value && sizeof(T) == 2) {
+        // Si c'est un short (2 bytes)
+        return htons(val);
+    }
+    else if constexpr (std::is_floating_point<T>::value && sizeof(T) == 4) {
+        // Si c'est un float (4 bytes)
+        uint32_t* p = reinterpret_cast<uint32_t*>(&val);
+        *p = htonl(*p);  // Convertir en Big Endian au niveau des octets
+        return val;
+    }
+    else if constexpr (std::is_floating_point<T>::value && sizeof(T) == 8) {
+        // Si c'est un double (8 bytes)
+        uint64_t* p = reinterpret_cast<uint64_t*>(&val);
+        *p = (static_cast<uint64_t>(htonl(static_cast<uint32_t>(*p))) << 32) |
+             htonl(static_cast<uint32_t>(*p >> 32));  // Manipuler les deux parties du double
+        return val;
+    }
+    else if constexpr (std::is_same<T, unsigned char>::value) {
+        // unsigned char ne nécessite pas de conversion
+        return val;
+    }
+    else {
+        static_assert(false, "Unsupported type for to_big_endian");
+    }
+}
+
+// Fonction générique pour convertir depuis Big Endian en fonction du type T
+template <typename T>
+T from_big_endian(T val) {
+    // Par défaut, pour les types comme int, short, on utilise ntohl et ntohs
+    static_assert(sizeof(T) == 4 || sizeof(T) == 2, "Unsupported type size");
+
+    if constexpr (std::is_integral<T>::value && sizeof(T) == 4) {
+        // Si c'est un int (4 bytes)
+        return ntohl(val);
+    }
+    else if constexpr (std::is_integral<T>::value && sizeof(T) == 2) {
+        // Si c'est un short (2 bytes)
+        return ntohs(val);
+    }
+    else if constexpr (std::is_floating_point<T>::value && sizeof(T) == 4) {
+        // Si c'est un float (4 bytes)
+        uint32_t* p = reinterpret_cast<uint32_t*>(&val);
+        *p = ntohl(*p);  // Inverser la conversion en Big Endian
+        return val;
+    }
+    else if constexpr (std::is_floating_point<T>::value && sizeof(T) == 8) {
+        // Si c'est un double (8 bytes)
+        uint64_t* p = reinterpret_cast<uint64_t*>(&val);
+        *p = (static_cast<uint64_t>(ntohl(static_cast<uint32_t>(*p))) << 32) |
+             ntohl(static_cast<uint32_t>(*p >> 32));  // Inverser la manipulation des deux parties
+        return val;
+    }
+    else if constexpr (std::is_same<T, unsigned char>::value) {
+        // unsigned char ne nécessite pas de conversion
+        return val;
+    }
+    else {
+        static_assert(false, "Unsupported type for from_big_endian");
+    }
+}
+
+int main() {
+    // Exemple de conversion
+    int int_val = 12345678;
+    short short_val = 1234;
+    float float_val = 3.14f;
+    double double_val = 2.718281828459;
+    unsigned char uchar_val = 255;
+
+    // Convertir en Big Endian
+    int int_be = to_big_endian(int_val);
+    short short_be = to_big_endian(short_val);
+    float float_be = to_big_endian(float_val);
+    double double_be = to_big_endian(double_val);
+    unsigned char uchar_be = to_big_endian(uchar_val);
+
+    // Convertir depuis Big Endian
+    int int_le = from_big_endian(int_be);
+    short short_le = from_big_endian(short_be);
+    float float_le = from_big_endian(float_be);
+    double double_le = from_big_endian(double_be);
+    unsigned char uchar_le = from_big_endian(uchar_be);
+
+    // Afficher les résultats
+    std::cout << "Int original: " << int_val << ", Int en Big Endian: " << int_be << ", Retour à l'original: " << int_le << std::endl;
+    std::cout << "Short original: " << short_val << ", Short en Big Endian: " << short_be << ", Retour à l'original: " << short_le << std::endl;
+    std::cout << "Float original: " << float_val << ", Float en Big Endian: " << float_be << ", Retour à l'original: " << float_le << std::endl;
+    std::cout << "Double original: " << double_val << ", Double en Big Endian: " << double_be << ", Retour à l'original: " << double_le << std::endl;
+    std::cout << "UChar original: " << (int)uchar_val << ", UChar en Big Endian: " << (int)uchar_be << ", Retour à l'original: " << (int)uchar_le << std::endl;
+
+    return 0;
+}
+
+
+
+
+#include <iostream>
+#include <fstream>
+#include <cstring>
+#include <arpa/inet.h>  // Pour htonl et ntohl
+
+struct ImageHeader {
+    char title[80];
+    int width;
+    int height;
+};
+
+int to_big_endian_int(int val) {
+    return htonl(val);  // Convertit en Big Endian
+}
+
+int from_big_endian_int(int val) {
+    return ntohl(val);  // Convertit depuis Big Endian
+}
+
+void write_header(std::ofstream &outfile, const ImageHeader &header) {
+    ImageHeader headerCopy = header;
+    
+    // Convertir les entiers en Big Endian avant d'écrire
+    headerCopy.width = to_big_endian_int(headerCopy.width);
+    headerCopy.height = to_big_endian_int(headerCopy.height);
+
+    // Écrire l'entête dans le fichier
+    outfile.write(reinterpret_cast<const char*>(&headerCopy), sizeof(headerCopy));
+}
+
+void read_header(std::ifstream &infile, ImageHeader &header) {
+    infile.read(reinterpret_cast<char*>(&header), sizeof(header));
+
+    // Convertir les entiers en format natif après avoir lu
+    header.width = from_big_endian_int(header.width);
+    header.height = from_big_endian_int(header.height);
+}
+
+int main() {
+    // Exemple de lecture et d'écriture avec un entête d'image
+    ImageHeader header = {"My Image", 1024, 768};
+
+    // Écrire dans un fichier
+    std::ofstream outfile("image.dat", std::ios::binary);
+    if (outfile) {
+        write_header(outfile, header);
+    }
+    outfile.close();
+
+    // Lire du fichier
+    std::ifstream infile("image.dat", std::ios::binary);
+    if (infile) {
+        ImageHeader readHeader;
+        read_header(infile, readHeader);
+        std::cout << "Title: " << readHeader.title << "\n";
+        std::cout << "Width: " << readHeader.width << "\n";
+        std::cout << "Height: " << readHeader.height << "\n";
+    }
+    infile.close();
+
+    return 0;
+}
+
+
+
+#pragma once
+#include <fstream>
+#include <vector>
+#include <stdexcept>
+#include <iostream>
+#include <cstdint>
+#include <cstring>
+#include <arpa/inet.h>  // Pour htonl, ntohl, htons et ntohs
+#include <type_traits>   // Pour std::is_integral, std::is_floating_point
+
+#pragma pack(push, 1)
+
+struct ImageHeader {
+    char title[80];   // Titre de l'image
+    int width;        // Largeur de l'image
+    int height;       // Hauteur de l'image
+};
+
+struct PixelData {
+    union {
+        int int_val;
+        float float_val;
+        double double_val;
+        unsigned short ushort_val;
+        unsigned char uchar_val;
+    };
+    char type;  // 'i' for int, 'f' for float, 'd' for double, 's' for unsigned short, 'c' for unsigned char
+};
+
+#pragma pack(pop)
+
+class CustomImage {
+public:
+    // Constructeur qui lit un fichier .flx
+    CustomImage(const char* fname) {
+        this->fname = fname;
+        read(fname);
+    }
+
+    // Constructeur qui crée une image vide avec les dimensions spécifiées
+    CustomImage(int width, int height, const char* title = "Untitled") {
+        header.width = width;
+        header.height = height;
+        std::strncpy(header.title, title, 80);
+    }
+
+    // Lire le fichier .flx et extraire les données
+    void read(const char* fname) {
+        std::ifstream infile{fname, std::ios::binary};
+        if (!infile) {
+            throw std::runtime_error("Unable to open file for reading");
+        }
+
+        // Lire l'entête de l'image
+        infile.read(reinterpret_cast<char*>(&header), sizeof(header));
+
+        // Allouer de l'espace pour les données des pixels
+        data.resize(header.width * header.height);
+
+        // Lire les données des pixels
+        for (int i = 0; i < header.width * header.height; ++i) {
+            char type;
+            infile.read(&type, sizeof(char));
+            data[i].type = type;
+            switch (type) {
+                case 'i':  // Int
+                    infile.read(reinterpret_cast<char*>(&data[i].int_val), sizeof(int));
+                    break;
+                case 'f':  // Float
+                    infile.read(reinterpret_cast<char*>(&data[i].float_val), sizeof(float));
+                    break;
+                case 'd':  // Double
+                    infile.read(reinterpret_cast<char*>(&data[i].double_val), sizeof(double));
+                    break;
+                case 's':  // Unsigned short
+                    infile.read(reinterpret_cast<char*>(&data[i].ushort_val), sizeof(unsigned short));
+                    break;
+                case 'c':  // Unsigned char
+                    infile.read(reinterpret_cast<char*>(&data[i].uchar_val), sizeof(unsigned char));
+                    break;
+                default:
+                    throw std::runtime_error("Unknown pixel data type");
+            }
+        }
+    }
+
+    // Écrire le fichier .flx avec l'extension appropriée
+    void write(const char* fname) {
+        std::ofstream outfile{fname, std::ios::binary};
+        if (!outfile) {
+            throw std::runtime_error("Unable to open file for writing");
+        }
+
+        // Écrire l'entête de l'image
+        outfile.write(reinterpret_cast<const char*>(&header), sizeof(header));
+
+        // Écrire les données des pixels
+        for (int i = 0; i < header.width * header.height; ++i) {
+            outfile.write(&data[i].type, sizeof(char));
+            switch (data[i].type) {
+                case 'i':  // Int
+                    outfile.write(reinterpret_cast<const char*>(&data[i].int_val), sizeof(int));
+                    break;
+                case 'f':  // Float
+                    outfile.write(reinterpret_cast<const char*>(&data[i].float_val), sizeof(float));
+                    break;
+                case 'd':  // Double
+                    outfile.write(reinterpret_cast<const char*>(&data[i].double_val), sizeof(double));
+                    break;
+                case 's':  // Unsigned short
+                    outfile.write(reinterpret_cast<const char*>(&data[i].ushort_val), sizeof(unsigned short));
+                    break;
+                case 'c':  // Unsigned char
+                    outfile.write(reinterpret_cast<const char*>(&data[i].uchar_val), sizeof(unsigned char));
+                    break;
+                default:
+                    throw std::runtime_error("Unknown pixel data type");
+            }
+        }
+    }
+
+    // Template pour définir un pixel
+    template <typename T>
+    void set_pixel(int x, int y, T value) {
+        if (x < 0 || x >= header.width || y < 0 || y >= header.height) {
+            throw std::out_of_range("Pixel coordinates are out of bounds");
+        }
+        int index = y * header.width + x;
+        data[index].type = get_type_char<T>();  // Set type based on the value type
+        if constexpr (std::is_integral<T>::value) {
+            data[index].int_val = to_big_endian(value);
+        }
+        else if constexpr (std::is_floating_point<T>::value) {
+            if (sizeof(T) == 4) {
+                data[index].float_val = to_big_endian(value);
+            } else if (sizeof(T) == 8) {
+                data[index].double_val = to_big_endian(value);
+            }
+        } else if constexpr (std::is_same<T, unsigned short>::value) {
+            data[index].ushort_val = to_big_endian(value);
+        } else if constexpr (std::is_same<T, unsigned char>::value) {
+            data[index].uchar_val = value;  // No need for conversion for unsigned char
+        }
+    }
+
+    // Template pour afficher un pixel
+    template <typename T>
+    void print_pixel(int x, int y) {
+        if (x < 0 || x >= header.width || y < 0 || y >= header.height) {
+            throw std::out_of_range("Pixel coordinates are out of bounds");
+        }
+        int index = y * header.width + x;
+        switch (data[index].type) {
+            case 'i':
+                std::cout << "Pixel at (" << x << ", " << y << ") - Type: int, Value: " << data[index].int_val << "\n";
+                break;
+            case 'f':
+                std::cout << "Pixel at (" << x << ", " << y << ") - Type: float, Value: " << data[index].float_val << "\n";
+                break;
+            case 'd':
+                std::cout << "Pixel at (" << x << ", " << y << ") - Type: double, Value: " << data[index].double_val << "\n";
+                break;
+            case 's':
+                std::cout << "Pixel at (" << x << ", " << y << ") - Type: unsigned short, Value: " << data[index].ushort_val << "\n";
+                break;
+            case 'c':
+                std::cout << "Pixel at (" << x << ", " << y << ") - Type: unsigned char, Value: " << (int)data[index].uchar_val << "\n";
+                break;
+            default:
+                std::cout << "Unknown pixel data type\n";
+        }
+    }
+
+private:
+    ImageHeader header;
+    std::vector<PixelData> data;
+    const char* fname;
+
+    // Fonction pour convertir en Big Endian en fonction du type T
+    template <typename T>
+    T to_big_endian(T val) {
+        static_assert(sizeof(T) == 4 || sizeof(T) == 2 || sizeof(T) == 8, "Unsupported type size");
+
+        if constexpr (std::is_integral<T>::value && sizeof(T) == 4) {
+            return htonl(val);
+        }
+        else if constexpr (std::is_integral<T>::value && sizeof(T) == 2) {
+            return htons(val);
+        }
+        else if constexpr (std::is_floating_point<T>::value && sizeof(T) == 4) {
+            uint32_t* p = reinterpret_cast<uint32_t*>(&val);
+            *p = htonl(*p);  
+            return val;
+        }
+        else if constexpr (std::is_floating_point<T>::value && sizeof(T) == 8) {
+            uint64_t* p = reinterpret_cast<uint64_t*>(&val);
+            *p = (static_cast<uint64_t>(htonl(static_cast<uint32_t>(*p))) << 32) |
+                 htonl(static_cast<uint32_t>(*p >> 32));
+            return val;
+        }
+        else {
+            return val; // unsigned char, pas besoin de conversion
+        }
+    }
+
+    // Fonction pour obtenir le caractère correspondant au type
+    template <typename T>
+    char get_type_char() {
+        if constexpr (std::is_integral<T>::value && sizeof(T) == 4) {
+            return 'i'; // int
+        }
+        else if constexpr (std::is_integral<T>::value && sizeof(T) == 2) {
+            return 's'; // short
+        }
+        else if constexpr (std::is_floating_point<T>::value && sizeof(T) == 4) {
+            return 'f'; // float
+        }
+        else if constexpr (std::is_floating_point<T>::value && sizeof(T) == 8) {
+            return 'd'; // double
+        }
+        else if constexpr (std::is_same<T, unsigned char>::value) {
+            return 'c'; // unsigned char
+        }
+        else {
+            throw std::runtime_error("Unsupported type for get_type_char");
+        }
+    }
+};
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
